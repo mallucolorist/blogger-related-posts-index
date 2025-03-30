@@ -1,19 +1,31 @@
 import requests
 import json
 import math
-import time # Import time module for potential delays
+import time
+import re # Import regex for finding images in content
 
 # --- Configuration ---
 BLOG_URL = "kfangirl4life.blogspot.com" # Your specific blog URL
 OUTPUT_FILE = "blog_index.json"
 MAX_RESULTS_PER_REQUEST = 500 # Blogger's limit
-REQUEST_DELAY_SECONDS = 0.5 # Optional delay between requests to avoid potential rate limits
+REQUEST_DELAY_SECONDS = 0.5 # Optional delay between requests
+DEFAULT_IMAGE = "https://resources.blogblog.com/img/blank.gif" # Default blank image
 # --- End Configuration ---
 
 # Check if the URL looks like the placeholder - it shouldn't if set correctly above
 if BLOG_URL == "YOUR_BLOG_URL_HERE":
     print("Error: BLOG_URL appears to be the placeholder. Please edit the script.")
     exit()
+
+# Helper function to extract the first image URL from HTML content
+def find_first_image_in_content(html_content):
+    if not html_content:
+        return None
+    # Regex to find the src attribute of the first img tag
+    match = re.search(r'<img[^>]+src=(["\'])(.*?)\1', html_content, re.IGNORECASE)
+    if match:
+        return match.group(2) # Return the URL found in the src attribute
+    return None
 
 all_posts_data = []
 start_index = 1
@@ -33,24 +45,21 @@ while True:
 
         # Basic validation of the received data structure
         if 'feed' not in data or 'entry' not in data.get('feed', {}):
-            # Check if it's just the end of the feed or an actual error
             if 'feed' in data and not data['feed'].get('entry'):
                  print("No more entries found in this batch.")
-                 # If total_posts was determined and we haven't reached it, maybe log a warning
                  if total_posts is not None and len(all_posts_data) < total_posts:
                       print(f"Warning: Reached end of feed entries but collected posts ({len(all_posts_data)}) is less than total reported ({total_posts}).")
-                 break # Exit loop if no entries are returned in a batch
+                 break
             else:
-                 # If feed or entry is missing entirely, it's likely an error
                  print("Feed format seems incorrect or 'entry' field is missing.")
-                 if start_index == 1: # If error on first request, stop
+                 if start_index == 1:
                       print("Could not fetch initial feed. Check BLOG_URL and feed validity.")
                       exit()
-                 else: # If error on subsequent request, stop fetching
+                 else:
                       print("Stopping fetch due to unexpected feed format on subsequent request.")
                       break
 
-        entries = data['feed']['entry'] # Now safe to access 'entry'
+        entries = data['feed']['entry']
 
         # Get total posts count from the first request
         if total_posts is None:
@@ -60,10 +69,10 @@ while True:
                       print(f"Total posts reported by feed: {total_posts}")
                  except (ValueError, TypeError):
                       print("Warning: Could not parse total number of posts from feed.")
-                      total_posts = -1 # Indicate parsing failed, rely on empty batch check
+                      total_posts = -1
             else:
                  print("Warning: Could not determine total number of posts from feed.")
-                 total_posts = -1 # Indicate it's unknown, rely on empty batch check
+                 total_posts = -1
 
 
         # Process the entries if any exist in this batch
@@ -74,7 +83,6 @@ while True:
                 if link.get('rel') == 'alternate' and link.get('type') == 'text/html':
                     post_url = link.get('href')
                     break
-            # Fallback if specific type isn't found but rel=alternate exists
             if not post_url:
                  for link in entry.get('link', []):
                       if link.get('rel') == 'alternate':
@@ -84,12 +92,31 @@ while True:
             title = entry.get('title', {}).get('$t', 'Untitled')
             # Extract labels, ensuring 'term' exists
             labels = [cat.get('term') for cat in entry.get('category', []) if cat.get('term')]
+            # Extract raw publication date
+            raw_date = entry.get('published', {}).get('$t', None)
+
+            # --- Extract Image URL ---
+            image_url = None
+            # 1. Try media$thumbnail
+            if 'media$thumbnail' in entry and 'url' in entry['media$thumbnail']:
+                image_url = entry['media$thumbnail']['url']
+            # 2. If no thumbnail, try finding first image in content
+            if not image_url:
+                 content = entry.get('content', {}).get('$t', '')
+                 image_url = find_first_image_in_content(content)
+            # 3. If still no image, use default
+            if not image_url:
+                 image_url = DEFAULT_IMAGE
+            # --- End Image URL Extraction ---
+
 
             if post_url:
                 all_posts_data.append({
                     "url": post_url,
                     "title": title,
-                    "labels": labels
+                    "labels": labels,
+                    "date": raw_date, # Add raw date
+                    "image": image_url # Add image url
                 })
             else:
                  print(f"Warning: Could not find 'alternate' URL for entry with title: {title}")
@@ -126,20 +153,15 @@ while True:
              print("Blog URL might be incorrect or feed path is wrong.")
         elif e.response.status_code == 403:
              print("Access forbidden. Blog might be private or require authentication.")
-        # Add more specific HTTP error handling if needed
         break
     except requests.exceptions.RequestException as e:
         print(f"Error: Network or request error: {e}")
         break
     except json.JSONDecodeError:
         print(f"Error: Could not decode JSON response from {feed_url}. Feed might be malformed or response was not JSON.")
-        # Optionally log response.text here for debugging, but be careful with large responses
-        # print(f"Response text: {response.text[:500]}...") # Log first 500 chars
         break
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        # Optionally re-raise for more detailed traceback in some environments
-        # raise
         break
 
 
