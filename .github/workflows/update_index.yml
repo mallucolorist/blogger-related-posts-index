@@ -7,6 +7,10 @@ on:
   push:
     branches:
       - main # Adjust if your default branch is different (e.g., master)
+# ---- ADD THIS BLOCK ----
+permissions:
+  contents: write # Allow workflow to write repository contents
+# ---- END OF BLOCK TO ADD ----      
 
 jobs:
   update-index:
