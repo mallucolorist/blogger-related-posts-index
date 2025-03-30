@@ -4,13 +4,13 @@ import math
 
 # --- Configuration ---
 # IMPORTANT: Replace with your actual Blog URL (e.g., "yourblogname.blogspot.com")
-BLOG_URL = "kfangirl4life.blogspot.com"
+BLOG_URL = "YOUR_BLOG_URL_HERE"
 OUTPUT_FILE = "blog_index.json"
 MAX_RESULTS_PER_REQUEST = 500 # Blogger's limit
 # --- End Configuration ---
 
-if BLOG_URL == "kfangirl4life.blogspot.com":
-    print("Error: Please replace 'kfangirl4life.blogspot.com' with your actual blog URL in the script.")
+if BLOG_URL == "YOUR_BLOG_URL_HERE": # Check against the original placeholder
+    print("Error: Please replace 'YOUR_BLOG_URL_HERE' with your actual blog URL in the script.")
     exit()
 
 all_posts_data = []
@@ -20,7 +20,8 @@ total_posts = None # We'll get this from the first request
 print(f"Starting fetch for blog: {BLOG_URL}")
 
 while True:
-    feed_url = f"https://{kfangirl4life.blogspot.com}/feeds/posts/default?alt=json&max-results={MAX_RESULTS_PER_REQUEST}&start-index={start_index}"
+    # Use the BLOG_URL variable in the f-string
+    feed_url = f"https://{BLOG_URL}/feeds/posts/default?alt=json&max-results={MAX_RESULTS_PER_REQUEST}&start-index={start_index}"
     print(f"Fetching: {feed_url}")
 
     try:
