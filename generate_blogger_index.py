@@ -10,7 +10,7 @@ MAX_RESULTS_PER_REQUEST = 500 # Blogger's limit
 # --- End Configuration ---
 
 if BLOG_URL == "kfangirl4life.blogspot.com": # Check against the original placeholder
-    print("Error: Please replace 'YOUR_BLOG_URL_HERE' with your actual blog URL in the script.")
+    print("Error: Please replace 'kfangirl4life.blogspot.com' with your actual blog URL in the script.")
     exit()
 
 all_posts_data = []
