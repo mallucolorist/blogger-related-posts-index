@@ -1,38 +1,49 @@
 name: Update Blogger Index
 
+# Controls when the action will run.
+# Runs on a schedule (e.g., daily at 1 AM UTC)
+# and also allows manual triggering from the Actions tab.
 on:
   schedule:
-    - cron: '0 1 * * *' # Runs daily at 1:00 AM UTC
+    - cron: '0 1 * * *' # Runs daily at 1:00 AM UTC. Adjust as needed. https://crontab.guru/
   workflow_dispatch: # Allows manual triggering
-  push:
+  push: # Optional: Run when code is pushed to the main branch
     branches:
       - main # Adjust if your default branch is different (e.g., master)
-# ---- ADD THIS BLOCK ----
+
+# ---- ADDED PERMISSIONS ----
 permissions:
   contents: write # Allow workflow to write repository contents
-# ---- END OF BLOCK TO ADD ----      
+# ---- END PERMISSIONS ----
 
 jobs:
   update-index:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
 
     steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4 # Use latest version
 
+    # Set up Python environment
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5 # Use latest version
       with:
-        python-version: '3.x'
+        python-version: '3.x' # Use a recent Python 3 version
 
+    # Install dependencies
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install requests
 
+    # Run the Python script to generate the index
+    # Ensure generate_blogger_index.py is in the root of your repo
+    # and BLOG_URL is correctly set inside the script.
     - name: Run index generator script
-      run: python generate_blogger_index.py # Assumes script is in root
+      run: python generate_blogger_index.py
 
+    # Commit the generated file back to the repository
     - name: Commit and push if changed
       run: |
         git config --global user.name 'github-actions[bot]'
@@ -40,7 +51,11 @@ jobs:
         git add blog_index.json
         # Commit only if there are changes
         git diff --staged --quiet || git commit -m "Automated index update [skip ci]"
+        # --- ADDED GIT PULL ---
+        git pull origin main --rebase # Pull latest changes, rebase local commit on top
+        # --- END GIT PULL ---
         # Push the changes back to the main branch
         git push origin main # Adjust branch name if needed
       env:
+        # This token is automatically provided by GitHub Actions
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
