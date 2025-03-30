@@ -4,12 +4,12 @@ import math
 
 # --- Configuration ---
 # IMPORTANT: Replace with your actual Blog URL (e.g., "yourblogname.blogspot.com")
-BLOG_URL = "YOUR_BLOG_URL_HERE"
+BLOG_URL = "kfangirl4life.blogspot.com"
 OUTPUT_FILE = "blog_index.json"
 MAX_RESULTS_PER_REQUEST = 500 # Blogger's limit
 # --- End Configuration ---
 
-if BLOG_URL == "YOUR_BLOG_URL_HERE": # Check against the original placeholder
+if BLOG_URL == "kfangirl4life.blogspot.com": # Check against the original placeholder
     print("Error: Please replace 'YOUR_BLOG_URL_HERE' with your actual blog URL in the script.")
     exit()
 
